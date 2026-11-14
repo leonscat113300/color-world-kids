@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useApp, backTargetOf, syncHistory, type Screen } from '@/lib/store'
+import { useApp, backTargetOf, syncHistory, isOnboardingScreen, type Screen } from '@/lib/store'
 import { makeT } from '@/lib/i18n'
 import { initAudio, setMusicEnabled, setSfxEnabled } from '@/lib/sound'
 import { toast } from '@/hooks/use-toast'
@@ -27,6 +27,23 @@ interface CapAppPlugin {
     cb: () => void,
   ) => Promise<{ remove?: () => void } | undefined>
   exitApp?: () => Promise<void>
+}
+
+/**
+ * If a Radix dialog / sheet is open, close it with a synthetic Escape press.
+ * Returns true when a dialog was open (so the hardware back closes the dialog
+ * instead of navigating screens).
+ */
+function closeTopDialog(): boolean {
+  if (typeof document === 'undefined') return false
+  const open = document.querySelector('[role="dialog"][data-state="open"]')
+  if (!open) return false
+  try {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+  } catch {
+    /* very old engines — ignore */
+  }
+  return true
 }
 
 export function ColorWorldApp() {
@@ -56,7 +73,17 @@ export function ColorWorldApp() {
 
     // Browser / WebView without the Capacitor App plugin:
     // back pops to the app-start entry → walk to the semantic parent (or stay).
+    // If a dialog is open, back closes the dialog instead.
     const onPop = (e: PopStateEvent) => {
+      if (closeTopDialog()) {
+        // re-push so the history stack keeps its guard entry
+        try {
+          window.history.pushState(e.state ?? window.history.state, '')
+        } catch {
+          /* noop */
+        }
+        return
+      }
       const st = (e.state as { screen?: Screen } | null)?.screen
       if (st) {
         // forward button or re-entry into a known screen
@@ -87,16 +114,21 @@ export function ColorWorldApp() {
         let lastBackAt = 0
         try {
           const handle = await capApp.addListener('backButton', () => {
+            // 1) a dialog is open → close the dialog, never the app
+            if (closeTopDialog()) return
             const { screen: cur, editing, lang: lng } = useApp.getState()
+            // 2) intro / splash / language / name → back does nothing (no exit)
+            if (isOnboardingScreen(cur)) return
+            // 3) walk to the semantic parent screen
             const back = backTargetOf(cur, editing)
             if (back) {
               useApp.setState({ screen: back })
               syncHistory(back)
               return
             }
-            // root screen → double-press to exit
+            // 4) home (root) → double-press within 2.5s exits, with a warning first
             const now = Date.now()
-            if (now - lastBackAt < 2200) {
+            if (now - lastBackAt < 2500) {
               void capApp.exitApp?.()
             } else {
               lastBackAt = now

@@ -6,6 +6,7 @@ import { Star } from 'lucide-react'
 import { useApp } from '@/lib/store'
 import { makeT, num } from '@/lib/i18n'
 import { initAudio, sfx } from '@/lib/sound'
+import { totalStarsEarned } from '@/lib/artwork-store'
 
 const STAR_COLORS = ['#FFD65A', '#FF91B8', '#78C8F8', '#8DDEB0', '#B9A0F5', '#FFAA62']
 
@@ -16,10 +17,17 @@ export function StarChip() {
 
   useEffect(() => {
     if (starTotal !== null) return
-    fetch('/api/artworks')
-      .then((r) => r.json())
-      .then((items: { stars: number }[]) => setStarTotal(items.reduce((s, a) => s + a.stars, 0)))
-      .catch(() => setStarTotal(0))
+    let alive = true
+    totalStarsEarned()
+      .then((total) => {
+        if (alive) setStarTotal(total)
+      })
+      .catch(() => {
+        if (alive) setStarTotal(0)
+      })
+    return () => {
+      alive = false
+    }
   }, [starTotal, setStarTotal])
 
   return (

@@ -13,6 +13,7 @@ import { templateById, dailyTemplate } from '@/lib/templates'
 import { MAIN_COLORS, PALETTES, paletteTitle } from '@/lib/palettes'
 import { STICKERS, stickerById, stickerDataUrl } from '@/lib/stickers'
 import { initAudio, sfx, playVoice } from '@/lib/sound'
+import { saveArtwork } from '@/lib/artwork-store'
 import { Rango, SpeechBubble } from './Rango'
 import { StarBurst } from './Fx'
 import { cn } from '@/lib/utils'
@@ -523,19 +524,16 @@ export function ColoringPage() {
         stickers: stickersRef.current,
       })
       const stars = Math.max(1, Object.keys(fillsRef.current).length + stickersRef.current.length)
-      const body = {
-        title: title.trim() || t('artworkName'),
-        image,
-        templateId: tpl.id,
-        state,
-        stars,
-      }
-      const res = await fetch(editing ? `/api/artworks/${editing.id}` : '/api/artworks', {
-        method: editing ? 'PATCH' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      if (!res.ok) throw new Error('save failed')
+      await saveArtwork(
+        {
+          title: title.trim() || t('artworkName'),
+          image,
+          templateId: tpl.id,
+          state,
+          stars,
+        },
+        editing?.id
+      )
       setEarned(stars)
       setSaveStep('done')
       sfx.achievement()

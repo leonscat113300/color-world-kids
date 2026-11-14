@@ -47,15 +47,15 @@ export function StudioIntro() {
           transition={{ type: 'spring', stiffness: 210, damping: 12 }}
         >
           <motion.div
-            className="grid h-36 w-36 place-items-center rounded-[2.4rem] border-4 border-white bg-white p-3 shadow-[0_14px_0_rgba(53,68,91,0.16)] sm:h-40 sm:w-40"
+            className="grid h-36 w-56 place-items-center rounded-[2.4rem] border-4 border-white bg-white p-2.5 shadow-[0_14px_0_rgba(53,68,91,0.16)] sm:h-40 sm:w-64"
             animate={{ y: [0, -6, 0] }}
             transition={{ delay: 1.2, duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
           >
             <Image
-              src="/logo.webp?v=2"
+              src="/candy-team-logo.webp"
               alt="Candy Team Game Studio"
-              width={128}
-              height={128}
+              width={224}
+              height={144}
               priority
               unoptimized
               className="h-full w-full object-contain"
@@ -159,7 +159,7 @@ export function Splash() {
           transition={{ delay: 0.15, type: 'spring', stiffness: 220, damping: 13 }}
         >
           <Image
-            src="/logo.webp?v=2"
+            src="/logo.webp"
             alt="Candy Team Game Studio"
             width={96}
             height={96}

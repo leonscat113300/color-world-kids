@@ -60,3 +60,13 @@ db/
 /download/*.apk
 /download/*.aab
 /agent-ctx/
+
+# capacitor / android build artifacts
+/android/.gradle/
+/android/build/
+/android/app/build/
+/android/local.properties
+/android/capacitor-cordova-android-plugins/
+/android/app/src/main/assets/public/
+.api-tmp/
+.firebase

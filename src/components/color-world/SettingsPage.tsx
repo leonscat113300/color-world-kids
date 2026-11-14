@@ -16,6 +16,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog'
 import type { ArtworkDto } from './GalleryPage'
+import { listArtworks, deleteAllArtworks } from '@/lib/artwork-store'
 import { cn } from '@/lib/utils'
 
 const rowCls =
@@ -422,12 +423,18 @@ export function ParentsPage() {
   const [confirmText, setConfirmText] = useState(false)
 
   useEffect(() => {
-    fetch('/api/artworks')
-      .then((r) => r.json())
-      .then((items: ArtworkDto[]) =>
+    let alive = true
+    listArtworks()
+      .then((items: ArtworkDto[]) => {
+        if (!alive) return
         setStats({ count: items.length, stars: items.reduce((s, a) => s + a.stars, 0) })
-      )
-      .catch(() => setStats({ count: 0, stars: 0 }))
+      })
+      .catch(() => {
+        if (alive) setStats({ count: 0, stars: 0 })
+      })
+    return () => {
+      alive = false
+    }
   }, [])
 
   const deleteAll = async () => {
@@ -438,7 +445,11 @@ export function ParentsPage() {
     }
     setConfirmText(false)
     setConfirmDelete(false)
-    await fetch('/api/artworks?all=1', { method: 'DELETE' })
+    try {
+      await deleteAllArtworks()
+    } catch {
+      /* ignore */
+    }
     sfx.pop()
     setStats({ count: 0, stars: 0 })
   }

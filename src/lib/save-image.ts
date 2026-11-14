@@ -1,17 +1,21 @@
-// Robust "really save it on the phone" helper for artwork PNGs.
+// Robust "really save / really share it on the phone" helpers for artwork PNGs.
 //
 // The plain `<a download>` trick silently fails inside WebViews (Capacitor APK)
-// and older mobile browsers — this module tries every real saving path in
-// order and falls through until one works:
+// and older mobile browsers — this module tries every real path in order and
+// falls through until one works:
 //
-//   1. Capacitor Filesystem plugin (APK build)  → writes into the device
-//      Documents folder (native file save).
-//   2. Capacitor Share plugin (APK build)       → hands the file to the native
-//      Android/iOS share sheet, which offers "Save to gallery / Files".
-//   3. File System Access API (desktop Chromium) → real "Save as…" dialog.
-//   4. Classic blob <a download>                → Chrome/Firefox/Safari
-//      (goes straight into the phone's Downloads folder).
-//   5. Web Share API with files                 → last resort on mobile.
+//   1. Capacitor Share plugin (APK build)       → hands the file to the native
+//      Android/iOS share sheet (WhatsApp, Telegram, "Save to gallery", …)
+//   2. Web Share API with files                 → Android Chrome / iOS Safari
+//      native share sheet (called while the user's tap is still "fresh")
+//   3. Capacitor Filesystem plugin (APK build)  → writes into the device
+//      Documents folder (native file save)
+//   4. File System Access API (desktop Chromium) → real "Save as…" dialog
+//   5. Classic blob <a download>                → Chrome/Firefox/Safari
+//      (goes straight into the phone's Downloads folder)
+//
+// Sharing is always tried BEFORE saving so the phone's real share sheet opens
+// whenever the platform allows it.
 'use client'
 
 // ------------------------------------------------------------- tiny helpers
@@ -68,9 +72,70 @@ export async function fetchImageBlob(url: string): Promise<Blob> {
   return await res.blob()
 }
 
-// ------------------------------------------------------------- save to device
+// ------------------------------------------------------------- share (native)
 
 export type SaveResult = 'saved' | 'downloaded' | 'shared'
+
+/**
+ * Open the phone's REAL share sheet for an image blob.
+ * Works in the Capacitor APK (native plugin) and in mobile browsers
+ * (Web Share API with files). Falls back to saving when neither exists.
+ */
+export async function shareImageBlob(blob: Blob, title: string): Promise<SaveResult> {
+  const filename = safeFileName(title)
+  const plugins = capPlugins()
+
+  // 1) Capacitor APK → native share sheet with the cached file URI
+  if (plugins?.Share) {
+    try {
+      let fileUri: string | undefined
+      if (plugins.Filesystem) {
+        try {
+          const data = await blobToBase64(blob)
+          const res = await plugins.Filesystem.writeFile({
+            path: filename,
+            data,
+            directory: 'CACHE',
+            recursive: true,
+          })
+          fileUri = res?.uri
+        } catch {
+          /* cache write failed → try share without files */
+        }
+      }
+      await plugins.Share.share({ title, ...(fileUri ? { files: [fileUri] } : { text: title }) })
+      return 'shared'
+    } catch (err) {
+      if (isAbort(err)) throw err // user closed the share sheet — not an error
+      /* fall through */
+    }
+  }
+
+  // 2) Web Share API with files (Chrome Android / iOS Safari)
+  if (typeof navigator !== 'undefined' && navigator.share) {
+    try {
+      const file = new File([blob], filename, { type: blob.type || 'image/png' })
+      if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title })
+        return 'shared'
+      }
+    } catch (err) {
+      if (isAbort(err)) throw err
+      /* fall through */
+    }
+  }
+
+  // 3) Nothing shareable → just save it instead
+  return saveImageToDevice(blob, filename)
+}
+
+/** Share an artwork by URL (kept for compatibility). */
+export async function shareImage(url: string, title: string): Promise<SaveResult> {
+  const blob = await fetchImageBlob(url)
+  return shareImageBlob(blob, title)
+}
+
+// ------------------------------------------------------------- save to device
 
 /** Save an image blob onto the device, trying every available strategy. */
 export async function saveImageToDevice(blob: Blob, filename: string): Promise<SaveResult> {
@@ -139,51 +204,4 @@ export async function saveImageToDevice(blob: Blob, filename: string): Promise<S
   }
 
   throw new Error('no save method available on this device')
-}
-
-// ------------------------------------------------------------- share
-
-/** Share an artwork via the native share sheet; falls back to saving. */
-export async function shareImage(url: string, title: string): Promise<'shared' | SaveResult> {
-  const blob = await fetchImageBlob(url)
-  const filename = safeFileName(title)
-  const plugins = capPlugins()
-
-  // Capacitor APK: stash the PNG in the cache dir and hand the file URI to
-  // the native share sheet (gallery, WhatsApp, Files, …)
-  if (plugins?.Filesystem && plugins?.Share) {
-    try {
-      const data = await blobToBase64(blob)
-      const res = await plugins.Filesystem.writeFile({
-        path: filename,
-        data,
-        directory: 'CACHE',
-        recursive: true,
-      })
-      if (res?.uri) {
-        await plugins.Share.share({ title, files: [res.uri] })
-        return 'shared'
-      }
-    } catch (err) {
-      if (isAbort(err)) throw err
-      /* fall through */
-    }
-  }
-
-  // Web Share API with files (Chrome Android / iOS Safari)
-  if (typeof navigator !== 'undefined' && navigator.share) {
-    try {
-      const file = new File([blob], filename, { type: blob.type || 'image/png' })
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title })
-        return 'shared'
-      }
-    } catch (err) {
-      if (isAbort(err)) throw err
-      /* fall through */
-    }
-  }
-
-  // Nothing shareable → just save it instead
-  return saveImageToDevice(blob, filename)
 }

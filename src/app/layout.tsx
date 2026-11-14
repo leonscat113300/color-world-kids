@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
     icon: [
-      { url: "/logo.webp?v=2", type: "image/webp" },
+      { url: "/logo.webp", type: "image/webp" },
       { url: "/icons/icon-192.png?v=2", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512.png?v=2", sizes: "512x512", type: "image/png" },
     ],

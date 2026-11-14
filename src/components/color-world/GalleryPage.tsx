@@ -6,10 +6,14 @@ import {
   Eye, Pencil, PenLine, Trash2, Download, Share2, Brush, Star, X,
 } from 'lucide-react'
 import { useApp, buzz } from '@/lib/store'
-import { makeT, num, type TKey } from '@/lib/i18n'
+import { makeT, num } from '@/lib/i18n'
 import { initAudio, sfx } from '@/lib/sound'
 import {
-  fetchImageBlob, safeFileName, saveImageToDevice, shareImage, isAbort,
+  listArtworks, renameArtwork, deleteArtwork,
+  artworkImageUrl, artworkImageBlob, type ArtworkDto,
+} from '@/lib/artwork-store'
+import {
+  safeFileName, saveImageToDevice, shareImageBlob, isAbort,
 } from '@/lib/save-image'
 import { useToast } from '@/hooks/use-toast'
 import { Rango } from './Rango'
@@ -20,14 +24,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 
-export interface ArtworkDto {
-  id: number
-  title: string
-  templateId: string
-  stars: number
-  state: string
-  createdAt: string
-}
+export type { ArtworkDto } from '@/lib/artwork-store'
 
 const iconBtn =
   'grid h-9 w-9 place-items-center rounded-xl border-2 border-[#35445B]/10 bg-white text-[#35445B]/70 shadow-sm'
@@ -37,15 +34,16 @@ export function GalleryPage() {
   const t = makeT(lang)
   const { toast } = useToast()
   const [items, setItems] = useState<ArtworkDto[] | null>(null)
+  const [srcs, setSrcs] = useState<Record<number, string>>({})
   const [viewItem, setViewItem] = useState<ArtworkDto | null>(null)
+  const [viewBlob, setViewBlob] = useState<{ id: number; blob: Blob } | null>(null)
   const [renameItem, setRenameItem] = useState<ArtworkDto | null>(null)
   const [newName, setNewName] = useState('')
   const [deleteItem, setDeleteItem] = useState<ArtworkDto | null>(null)
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/artworks')
-      setItems(await res.json())
+      setItems(await listArtworks())
     } catch {
       setItems([])
     }
@@ -53,9 +51,8 @@ export function GalleryPage() {
 
   useEffect(() => {
     let alive = true
-    fetch('/api/artworks')
-      .then((r) => r.json())
-      .then((data: ArtworkDto[]) => {
+    listArtworks()
+      .then((data) => {
         if (alive) setItems(data)
       })
       .catch(() => {
@@ -66,22 +63,65 @@ export function GalleryPage() {
     }
   }, [])
 
+  // resolve every artwork image URL (API URL in remote mode, data-URL offline)
+  useEffect(() => {
+    if (!items) return
+    let alive = true
+    void (async () => {
+      const next: Record<number, string> = {}
+      await Promise.all(
+        items.map(async (a) => {
+          try {
+            next[a.id] = await artworkImageUrl(a.id)
+          } catch {
+            /* leave empty */
+          }
+        })
+      )
+      if (alive) setSrcs((prev) => ({ ...prev, ...next }))
+    })()
+    return () => {
+      alive = false
+    }
+  }, [items])
+
+  // pre-load the image blob when the view dialog opens → share/save are instant
+  useEffect(() => {
+    if (!viewItem) return
+    let alive = true
+    const id = viewItem.id
+    artworkImageBlob(id)
+      .then((blob) => {
+        if (alive) setViewBlob({ id, blob })
+      })
+      .catch(() => {
+        /* share will fetch it on demand */
+      })
+    return () => {
+      alive = false
+    }
+  }, [viewItem])
+
   const doRename = async () => {
     if (!renameItem) return
     sfx.tap()
-    await fetch(`/api/artworks/${renameItem.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: newName.trim() || t('artworkName') }),
-    })
+    try {
+      await renameArtwork(renameItem.id, newName.trim() || t('artworkName'))
+      sfx.success()
+    } catch {
+      sfx.error()
+    }
     setRenameItem(null)
-    sfx.success()
     void load()
   }
 
   const doDelete = async () => {
     if (!deleteItem) return
-    await fetch(`/api/artworks/${deleteItem.id}`, { method: 'DELETE' })
+    try {
+      await deleteArtwork(deleteItem.id)
+    } catch {
+      /* ignore */
+    }
     setDeleteItem(null)
     setViewItem(null)
     sfx.pop()
@@ -93,7 +133,7 @@ export function GalleryPage() {
   const download = async (a: ArtworkDto) => {
     sfx.tap()
     try {
-      const blob = await fetchImageBlob(`/api/artworks/${a.id}/image`)
+      const blob = viewItem?.id === viewBlob?.id && viewBlob ? viewBlob.blob : await artworkImageBlob(a.id)
       await saveImageToDevice(blob, safeFileName(a.title))
       sfx.success()
       buzz(settings.vibration, 30)
@@ -105,6 +145,7 @@ export function GalleryPage() {
     }
   }
 
+  /** Opens the phone's REAL share sheet (WhatsApp, Telegram, gallery, …). */
   const share = async (a: ArtworkDto) => {
     sfx.tap()
     if (!settings.sharing) {
@@ -113,13 +154,18 @@ export function GalleryPage() {
       return
     }
     try {
-      await shareImage(`/api/artworks/${a.id}/image`, a.title || 'artwork')
+      const blob = viewItem?.id === viewBlob?.id && viewBlob ? viewBlob.blob : await artworkImageBlob(a.id)
+      const result = await shareImageBlob(blob, a.title || 'artwork')
       sfx.success()
+      buzz(settings.vibration, 30)
+      // a real native share sheet is its own feedback; a silent fallback save
+      // (browser without Web Share, WebView without plugins) deserves a toast
+      if (result !== 'shared') toast({ description: t('savedToDevice') })
     } catch (err) {
       if (isAbort(err)) return // user closed the share sheet
       // couldn't open a share sheet → save it instead
       try {
-        const blob = await fetchImageBlob(`/api/artworks/${a.id}/image`)
+        const blob = await artworkImageBlob(a.id)
         await saveImageToDevice(blob, safeFileName(a.title))
         sfx.success()
         toast({ description: t('savedToDevice') })
@@ -197,12 +243,16 @@ export function GalleryPage() {
                     className="block w-full"
                     aria-label={a.title}
                   >
-                    <img
-                      src={`/api/artworks/${a.id}/image`}
-                      alt={a.title}
-                      className="aspect-square w-full rounded-xl border-2 border-[#35445B]/5 bg-white object-contain"
-                      loading="lazy"
-                    />
+                    {srcs[a.id] ? (
+                      <img
+                        src={srcs[a.id]}
+                        alt={a.title}
+                        className="aspect-square w-full rounded-xl border-2 border-[#35445B]/5 bg-white object-contain"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <Skeleton className="aspect-square w-full rounded-xl" />
+                    )}
                   </button>
                   <div className="mt-1.5 flex items-center justify-between gap-1 px-0.5">
                     <span className="min-w-0 truncate text-xs font-black text-[#35445B]">{a.title}</span>
@@ -280,7 +330,7 @@ export function GalleryPage() {
               </DialogHeader>
               <div className="relative">
                 <img
-                  src={`/api/artworks/${viewItem.id}/image`}
+                  src={srcs[viewItem.id] ?? ''}
                   alt={viewItem.title}
                   className="mt-2 w-full rounded-2xl border-2 border-[#35445B]/5 bg-white"
                 />

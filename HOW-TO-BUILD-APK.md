@@ -1,62 +1,68 @@
 # ساخت فایل APK از «دنیای رنگ‌ها» / Build the APK
 
-The web app is a standard Next.js project, so you have two ways to get it on Android phones.
+The game now ships as a **fully-offline Android APK**: all pages, sounds, the
+20 categories (2000 drawings) and artwork storage live **inside the APK** —
+no hosted server URL is needed anymore. Artworks are stored on the device
+(IndexedDB) and the phone's hardware back button, real saving (Documents/
+Downloads) and the native share sheet are handled by native Capacitor plugins.
 
 ---
 
-## روش ۱ — نصب مستقیم بدون نیاز به ساخت APK (سریع‌ترین راه) — PWA
+## روش ۱ — ساخت سریع با یک دستور (پیشنهادی)
 
-The app ships with a full PWA manifest (`public/manifest.json`) and icons.
-
-1. Open the app URL in **Chrome (Android)**.
-2. Tap **⋮ → Add to Home screen / Install app**.
-3. The app installs with its own icon, full-screen (standalone), exactly like an APK app — no store needed.
-
-## روش ۲ — ساخت فایل APK واقعی با Capacitor (نیازمند Android Studio)
-
-### پیش‌نیازها (Requirements)
-- Node.js 18+
-- Android Studio (this installs the Android SDK automatically)
-- A hosted URL of this app (any hosting: Vercel, your own server, etc.)
-
-### مراحل (Steps)
+Requirements: Node.js 18+ (or Bun), JDK 17+, Android Studio (for the SDK).
 
 ```bash
-# 1. inside the unzipped project
-npm install
+# 1. inside the project folder
+npm install            # (or: bun install)
 
-# 2. add Capacitor + the plugins the game needs:
-#    @capacitor/app         → Android back button navigates inside the game
-#                             (double-press on the home screen exits)
-#    @capacitor/filesystem  → «نقاشی‌های من» really saves the PNG on the phone
-#    @capacitor/share       → native share sheet for the artworks
-npm install @capacitor/core @capacitor/cli @capacitor/android \
-  @capacitor/app @capacitor/filesystem @capacitor/share
-
-# 3. the project already ships with `capacitor.config.json` in its root —
-#    open it and replace https://YOUR-APP-URL with the address where this
-#    app is hosted (nothing else needs to change)
-
-# 4. add the Android platform and open Android Studio
-npx cap add android
-npx cap sync android
-npx cap open android
+# 2. build + sync + assemble — everything in one command
+npm run build:apk      # (or: bun run build:apk)
 ```
 
-5. In Android Studio: **Build → Build Bundle(s)/APK(s) → Build APK(s)**.
-6. Your APK is generated at:
-   `android/app/build/outputs/apk/debug/app-debug.apk`
-7. For a release/signed APK use **Build → Generate Signed Bundle / APK** and follow the wizard (keystore + signing).
+The APK lands at:
 
-> نکته: هر بار که نسخه‌ی وب بازی به‌روز شد، فقط `npx cap sync android` را دوباره اجرا کنید تا پلاگین‌ها و تنظیمات تازه شوند.
+```
+download/color-world.apk
+```
+
+Copy it to the phone and install (allow "install from unknown sources").
+Inside Android Studio you can also run **Build → Generate Signed Bundle/APK**
+for a release/signed version.
+
+> پلاگین‌های داخل بازی از قبل نصب هستند:
+> - `@capacitor/app` → دکمه‌ی برگشت گوشی داخل بازی حرکت می‌کند؛ روی خانه دو بار بزنید تا خارج شود؛ بک روی پنجره‌ها اول پنجره را می‌بندد.
+> - `@capacitor/filesystem` → دکمه‌ی ذخیره در «نقاشی‌های من» فایل PNG را واقعاً روی گوشی ذخیره می‌کند.
+> - `@capacitor/share` → دکمه‌ی اشتراک‌گذاری شیت اشتراک‌گذاری خود اندروید را باز می‌کند.
+
+## روش ۲ — نصب مستقیم بدون APK (PWA)
+
+Open the hosted URL in **Chrome (Android)** → **⋮ → Add to Home screen /
+Install app**. The back button also stays inside the game thanks to the
+built-in history guard.
+
+---
+
+## مراحل دستی (همان کاری که build:apk انجام می‌دهد)
+
+```bash
+npm install
+npm run build:web-apk      # next build (static export) → ./out
+npx cap sync android       # copy ./out + plugins into android/
+cd android && ./gradlew assembleDebug
+# → android/app/build/outputs/apk/debug/app-debug.apk
+```
 
 ### آیکون اپ (App icon)
-Android Studio: right-click `res` → **New → Image Asset** → use `public/icons/icon-512.png` as the source image.
+Icons/splash are generated from `public/icons/icon-512.png` via
+`bunx capacitor-assets generate --android`. To change them, replace that file
+and re-run the command + `npx cap sync android`.
 
-### دکمه‌ی برگشت گوشی و ذخیره‌ی نقاشی‌ها (Back button & saving)
-با نصب سه پلاگین بالا، داخل بازی:
-- دکمه‌ی برگشت گوشی بین صفحه‌ها حرکت می‌کند و بازی ناگهانی بسته نمی‌شود؛ روی صفحه‌ی خانه دو بار پشت‌سرهم بزنید تا بازی خارج شود.
-- در «نقاشی‌های من» دکمه‌ی ذخیره، فایل PNG را واقعاً روی گوشی (پوشه‌ی Documents/Downloads) ذخیره می‌کند و دکمه‌ی اشتراک‌گذاری، شیت اشتراک‌گذاری خود اندروید را باز می‌کند.
+### وب هاست‌شده (Hosted web version)
+The normal web/server build is untouched: `npm run build && npm start`
+(standalone Next.js server with `/api/artworks` on SQLite). The screens
+detect automatically whether the API exists (hosted) or not (APK) and store
+artworks accordingly.
 
 ---
 
@@ -64,6 +70,7 @@ Android Studio: right-click `res` → **New → Image Asset** → use `public/ic
 
 | فایل | مسیر |
 |---|---|
+| فایل APK آماده | `download/color-world.apk` |
 | سورس کامل پروژه | `GET /api/download` (ZIP file) |
 | کاتالوگ JSON همه‌ی ۲۰ دسته و ۲۰۰۰ نقاشی | `GET /api/catalog` |
-| API ذخیره/لیست نقاشی‌ها | `GET/POST /api/artworks` |
+| API ذخیره/لیست نقاشی‌ها (نسخه‌ی وب) | `GET/POST /api/artworks` |

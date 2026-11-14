@@ -113,7 +113,7 @@ export const useApp = create<AppState>()(
         voice: true,
         vibration: true,
         quality: 'high',
-        sharing: false,
+        sharing: true,
       },
       pickerCategory: 'animals',
       currentTemplateId: null,
@@ -148,6 +148,16 @@ export const useApp = create<AppState>()(
     }),
     {
       name: 'color-world',
+      version: 1,
+      migrate: (persisted, version) => {
+        const p = persisted as Partial<AppState> | undefined
+        if (p?.settings && version < 1) {
+          // one-time upgrade: sharing used to ship disabled, which made the
+          // share button in «نقاشی‌های من» look broken — enable it for everyone
+          p.settings = { ...p.settings, sharing: true }
+        }
+        return p as AppState
+      },
       partialize: (s) => ({
         lang: s.lang,
         langChosen: s.langChosen,

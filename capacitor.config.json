@@ -1,10 +1,11 @@
 {
   "appId": "com.candyteam.colorworld",
   "appName": "دنیای رنگ‌ها",
-  "webDir": "public",
+  "webDir": "out",
+  "android": {
+    "allowMixedContent": false
+  },
   "server": {
-    "url": "https://YOUR-APP-URL",
-    "cleartext": false,
     "androidScheme": "https"
   }
 }

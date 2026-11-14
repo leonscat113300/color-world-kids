@@ -10,7 +10,7 @@ import { makeT, num, tf } from '@/lib/i18n'
 import { initAudio, sfx, playVoice } from '@/lib/sound'
 import { Rango } from './Rango'
 import { StarBurst } from './Fx'
-import type { ArtworkDto } from './GalleryPage'
+import { listArtworks, type ArtworkDto } from '@/lib/artwork-store'
 
 interface BadgeDef {
   key: 'badge1' | 'badge2' | 'badge3' | 'badge4' | 'badge5' | 'badge6' | 'badge7' | 'badge8'
@@ -40,14 +40,20 @@ export function RewardsPage() {
   const [items, setItems] = useState<ArtworkDto[] | null>(null)
 
   useEffect(() => {
-    fetch('/api/artworks')
-      .then((r) => r.json())
+    let alive = true
+    listArtworks()
       .then((data: ArtworkDto[]) => {
+        if (!alive) return
         setItems(data)
         const total = data.reduce((s, a) => s + a.stars, 0)
         if (total !== useApp.getState().starTotal) setStarTotal(total)
       })
-      .catch(() => setItems([]))
+      .catch(() => {
+        if (alive) setItems([])
+      })
+    return () => {
+      alive = false
+    }
   }, [setStarTotal])
 
   const count = items?.length ?? 0
