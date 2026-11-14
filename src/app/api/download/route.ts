@@ -18,6 +18,7 @@ const INCLUDES = [
   'prisma',
   'scripts',
   'HOW-TO-BUILD-APK.md',
+  'capacitor.config.json',
   'package.json',
   'bun.lock',
   'tsconfig.json',

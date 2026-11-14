@@ -33,14 +33,9 @@ npm install
 npm install @capacitor/core @capacitor/cli @capacitor/android \
   @capacitor/app @capacitor/filesystem @capacitor/share
 
-# 3. create capacitor.config.json
-#    replace https://YOUR-APP-URL with the address where this app is hosted
-{
-  "appId": "com.candyteam.colorworld",
-  "appName": "Color World Kids",
-  "webDir": "public",
-  "server": { "url": "https://YOUR-APP-URL", "cleartext": false }
-}
+# 3. the project already ships with `capacitor.config.json` in its root —
+#    open it and replace https://YOUR-APP-URL with the address where this
+#    app is hosted (nothing else needs to change)
 
 # 4. add the Android platform and open Android Studio
 npx cap add android
