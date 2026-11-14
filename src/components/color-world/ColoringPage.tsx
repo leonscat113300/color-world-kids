@@ -13,6 +13,7 @@ import { templateById, dailyTemplate } from '@/lib/templates'
 import { MAIN_COLORS, PALETTES, paletteTitle } from '@/lib/palettes'
 import { STICKERS, stickerById, stickerDataUrl } from '@/lib/stickers'
 import { initAudio, sfx, playVoice } from '@/lib/sound'
+import { createArtwork, updateArtwork } from '@/lib/artworks'
 import { Rango, SpeechBubble } from './Rango'
 import { StarBurst } from './Fx'
 import { cn } from '@/lib/utils'
@@ -530,19 +531,16 @@ export function ColoringPage() {
         state,
         stars,
       }
-      const res = await fetch(editing ? `/api/artworks/${editing.id}` : '/api/artworks', {
-        method: editing ? 'PATCH' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      if (!res.ok) throw new Error('save failed')
+      if (editing) await updateArtwork(editing.id, body)
+      else await createArtwork(body)
       setEarned(stars)
       setSaveStep('done')
       sfx.achievement()
       const st = useApp.getState()
       st.setStarTotal((st.starTotal ?? 0) + stars)
       clearEdit()
-    } catch {
+    } catch (err) {
+      console.error('SAVE-FAIL', err)
       setSaveStep(null)
       sfx.error()
     }

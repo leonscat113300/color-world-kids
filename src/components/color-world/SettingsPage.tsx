@@ -15,7 +15,7 @@ import { Slider } from '@/components/ui/slider'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog'
-import type { ArtworkDto } from './GalleryPage'
+import { listArtworks, deleteAllArtworks, type ArtworkDto } from '@/lib/artworks'
 import { cn } from '@/lib/utils'
 
 const rowCls =
@@ -422,8 +422,7 @@ export function ParentsPage() {
   const [confirmText, setConfirmText] = useState(false)
 
   useEffect(() => {
-    fetch('/api/artworks')
-      .then((r) => r.json())
+    listArtworks()
       .then((items: ArtworkDto[]) =>
         setStats({ count: items.length, stars: items.reduce((s, a) => s + a.stars, 0) })
       )
@@ -438,7 +437,7 @@ export function ParentsPage() {
     }
     setConfirmText(false)
     setConfirmDelete(false)
-    await fetch('/api/artworks?all=1', { method: 'DELETE' })
+    await deleteAllArtworks()
     sfx.pop()
     setStats({ count: 0, stars: 0 })
   }

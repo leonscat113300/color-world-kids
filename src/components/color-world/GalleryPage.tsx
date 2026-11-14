@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { useApp, buzz } from '@/lib/store'
 import { makeT, num, type TKey } from '@/lib/i18n'
+import { listArtworks, updateArtwork, deleteArtwork, artworkImageUrl, type ArtworkDto } from '@/lib/artworks'
 import { initAudio, sfx, playVoice } from '@/lib/sound'
 import { Rango } from './Rango'
 import { StarBurst } from './Fx'
@@ -16,15 +17,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 
-export interface ArtworkDto {
-  id: number
-  title: string
-  templateId: string
-  stars: number
-  state: string
-  createdAt: string
-}
-
 const iconBtn =
   'grid h-9 w-9 place-items-center rounded-xl border-2 border-[#35445B]/10 bg-white text-[#35445B]/70 shadow-sm'
 
@@ -32,6 +24,7 @@ export function GalleryPage() {
   const { lang, settings, go, openEdit } = useApp()
   const t = makeT(lang)
   const [items, setItems] = useState<ArtworkDto[] | null>(null)
+  const [urls, setUrls] = useState<Record<number, string>>({})
   const [viewItem, setViewItem] = useState<ArtworkDto | null>(null)
   const [renameItem, setRenameItem] = useState<ArtworkDto | null>(null)
   const [newName, setNewName] = useState('')
@@ -39,36 +32,25 @@ export function GalleryPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/artworks')
-      setItems(await res.json())
+      const data = await listArtworks()
+      const map: Record<number, string> = {}
+      for (const a of data) map[a.id] = (await artworkImageUrl(a.id)) ?? ''
+      setUrls(map)
+      setItems(data)
     } catch {
       setItems([])
     }
   }, [])
 
   useEffect(() => {
-    let alive = true
-    fetch('/api/artworks')
-      .then((r) => r.json())
-      .then((data: ArtworkDto[]) => {
-        if (alive) setItems(data)
-      })
-      .catch(() => {
-        if (alive) setItems([])
-      })
-    return () => {
-      alive = false
-    }
-  }, [])
+    const to = setTimeout(() => void load(), 0)
+    return () => clearTimeout(to)
+  }, [load])
 
   const doRename = async () => {
     if (!renameItem) return
     sfx.tap()
-    await fetch(`/api/artworks/${renameItem.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: newName.trim() || t('artworkName') }),
-    })
+    await updateArtwork(renameItem.id, { title: newName.trim() || t('artworkName') })
     setRenameItem(null)
     sfx.success()
     void load()
@@ -76,7 +58,7 @@ export function GalleryPage() {
 
   const doDelete = async () => {
     if (!deleteItem) return
-    await fetch(`/api/artworks/${deleteItem.id}`, { method: 'DELETE' })
+    await deleteArtwork(deleteItem.id)
     setDeleteItem(null)
     setViewItem(null)
     sfx.pop()
@@ -84,10 +66,12 @@ export function GalleryPage() {
     void load()
   }
 
-  const download = (a: ArtworkDto) => {
+  const download = async (a: ArtworkDto) => {
     sfx.tap()
+    const url = await artworkImageUrl(a.id)
+    if (!url) return
     const aEl = document.createElement('a')
-    aEl.href = `/api/artworks/${a.id}/image`
+    aEl.href = url
     aEl.download = `${a.title || 'artwork'}.png`
     aEl.click()
     playVoice(lang, 'rGreat', settings.voice)
@@ -100,7 +84,9 @@ export function GalleryPage() {
       return
     }
     try {
-      const blob = await (await fetch(`/api/artworks/${a.id}/image`)).blob()
+      const url = await artworkImageUrl(a.id)
+      if (!url) return
+      const blob = await (await fetch(url)).blob()
       const file = new File([blob], `${a.title || 'artwork'}.png`, { type: 'image/png' })
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title: a.title })
@@ -179,7 +165,7 @@ export function GalleryPage() {
                     aria-label={a.title}
                   >
                     <img
-                      src={`/api/artworks/${a.id}/image`}
+                      src={urls[a.id] ?? ''}
                       alt={a.title}
                       className="aspect-square w-full rounded-xl border-2 border-[#35445B]/5 bg-white object-contain"
                       loading="lazy"
@@ -261,7 +247,7 @@ export function GalleryPage() {
               </DialogHeader>
               <div className="relative">
                 <img
-                  src={`/api/artworks/${viewItem.id}/image`}
+                  src={urls[viewItem.id] ?? ''}
                   alt={viewItem.title}
                   className="mt-2 w-full rounded-2xl border-2 border-[#35445B]/5 bg-white"
                 />

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useEffect, useMemo } from 'react'
 import { Star } from 'lucide-react'
 import { useApp } from '@/lib/store'
+import { listArtworks } from '@/lib/artworks'
 import { makeT, num } from '@/lib/i18n'
 import { initAudio, sfx } from '@/lib/sound'
 
@@ -16,9 +17,8 @@ export function StarChip() {
 
   useEffect(() => {
     if (starTotal !== null) return
-    fetch('/api/artworks')
-      .then((r) => r.json())
-      .then((items: { stars: number }[]) => setStarTotal(items.reduce((s, a) => s + a.stars, 0)))
+    listArtworks()
+      .then((items) => setStarTotal(items.reduce((s, a) => s + a.stars, 0)))
       .catch(() => setStarTotal(0))
   }, [starTotal, setStarTotal])
 

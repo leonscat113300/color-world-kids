@@ -1,54 +1,63 @@
 # ساخت فایل APK از «دنیای رنگ‌ها» / Build the APK
 
-The web app is a standard Next.js project, so you have two ways to get it on Android phones.
+The app is a **fully offline** kids' coloring book (drawings are generated in the browser,
+artworks are saved on-device in IndexedDB), so the Android APK needs **no server at all**.
 
 ---
 
-## روش ۱ — نصب مستقیم بدون نیاز به ساخت APK (سریع‌ترین راه) — PWA
+## روش ۰ — فایل آماده (Prebuilt APK)
 
-The app ships with a full PWA manifest (`public/manifest.json`) and icons.
+A ready, installable debug APK ships with this repository:
+
+```
+download/color-world-kids.apk      (~7 MB, Android 7.0+)
+```
+
+Copy it to a phone and tap it (allow "install from unknown sources" when asked).
+App id: `com.candyteam.colorworld` — launcher name: «دنیای رنگ‌ها».
+
+## روش ۱ — ساخت مجدد با یک دستور (One-command rebuild)
+
+On any machine with Node.js/Bun + JDK 17+ + Android SDK (Android Studio counts):
+
+```bash
+bash apk-kit/build-apk.sh
+```
+
+The script (in `apk-kit/build-apk.sh`) automatically:
+1. Builds the web app as a **static export** (`out/`),
+2. Copies it into `apk-kit/web/`,
+3. Installs Capacitor, creates/syncs the Android project,
+4. Regenerates the launcher icons from `public/icons/icon-512.png`,
+5. Runs `gradlew assembleDebug`,
+6. Copies the result to `download/color-world-kids.apk`.
+
+Environment: set `ANDROID_HOME` (and `JAVA_HOME` if javac is not on PATH).
+Without an Android SDK, install Android Studio first — nothing else is needed.
+
+## روش ۲ — نصب مستقیم به‌عنوان اپ (PWA، بدون APK)
+
+The web app ships with a full PWA manifest (`public/manifest.json`) and icons.
 
 1. Open the app URL in **Chrome (Android)**.
 2. Tap **⋮ → Add to Home screen / Install app**.
 3. The app installs with its own icon, full-screen (standalone), exactly like an APK app — no store needed.
 
-## روش ۲ — ساخت فایل APK واقعی با Capacitor (نیازمند Android Studio)
-
-### پیش‌نیازها (Requirements)
-- Node.js 18+
-- Android Studio (this installs the Android SDK automatically)
-- A hosted URL of this app (any hosting: Vercel, your own server, etc.)
-
-### مراحل (Steps)
+## روش ۳ — ساخت دستی با Capacitor (Android Studio)
 
 ```bash
-# 1. inside the unzipped project
+# 1. inside the project
 npm install
-
-# 2. add Capacitor
+cd apk-kit
 npm install @capacitor/core @capacitor/cli @capacitor/android
-
-# 3. create capacitor.config.json
-#    replace https://YOUR-APP-URL with the address where this app is hosted
-{
-  "appId": "com.candyteam.colorworld",
-  "appName": "Color World Kids",
-  "webDir": "public",
-  "server": { "url": "https://YOUR-APP-URL", "cleartext": false }
-}
-
-# 4. add the Android platform and open Android Studio
-npx cap add android
-npx cap open android
+npx cap add android        # uses apk-kit/capacitor.config.json
+npx cap open android       # opens Android Studio
 ```
 
-5. In Android Studio: **Build → Build Bundle(s)/APK(s) → Build APK(s)**.
-6. Your APK is generated at:
-   `android/app/build/outputs/apk/debug/app-debug.apk`
-7. For a release/signed APK use **Build → Generate Signed Bundle / APK** and follow the wizard (keystore + signing).
+Then: **Build → Build Bundle(s)/APK(s) → Build APK(s)** →
+`apk-kit/android/app/build/outputs/apk/debug/app-debug.apk`.
 
-### آیکون اپ (App icon)
-Android Studio: right-click `res` → **New → Image Asset** → use `public/icons/icon-512.png` as the source image.
+For a release/signed APK use **Build → Generate Signed Bundle / APK** and follow the wizard.
 
 ---
 
@@ -56,6 +65,10 @@ Android Studio: right-click `res` → **New → Image Asset** → use `public/ic
 
 | فایل | مسیر |
 |---|---|
-| سورس کامل پروژه | `GET /api/download` (ZIP file) |
+| APK آماده نصب | `download/color-world-kids.apk` + `GET /api/download?file=apk` |
+| سورس کامل پروژه (ZIP) | `GET /api/download` |
 | کاتالوگ JSON همه‌ی ۲۰ دسته و ۲۰۰۰ نقاشی | `GET /api/catalog` |
-| API ذخیره/لیست نقاشی‌ها | `GET/POST /api/artworks` |
+| API ذخیره/لیست نقاشی‌ها (برای سرویس‌های بیرونی) | `GET/POST /api/artworks` |
+
+> نکته: خودِ اپ نقاشی‌ها را روی همان دستگاه (IndexedDB) ذخیره می‌کند و کاملاً آفلاین کار می‌کند؛
+> APIها برای اتصال سرویس‌های بیرونی و بکاپ گرفتن در نسخه‌ی وب در دسترس‌اند.
