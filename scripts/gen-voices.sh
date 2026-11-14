@@ -15,7 +15,6 @@ declare -A FA=(
   [rGood]="آفرین! عالی شد!"
   [rWow]="وای! چقدر قشنگ!"
   [rAnother]="یه رنگ دیگه!"
-  [rGreat]="کارت عالی بود!"
 )
 declare -A EN=(
   [rReady]="Let's paint!"
@@ -23,7 +22,6 @@ declare -A EN=(
   [rGood]="Great job!"
   [rWow]="Wow! That's amazing!"
   [rAnother]="Another color!"
-  [rGreat]="You're doing great!"
 )
 
 gen() {

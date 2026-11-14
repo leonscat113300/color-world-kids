@@ -3,12 +3,15 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCallback, useEffect, useState } from 'react'
 import {
-  Eye, Pencil, PenLine, Trash2, Download, Share2, Brush, Star, X,
+  Pencil, PenLine, Trash2, Download, Share2, Brush, Star, X,
 } from 'lucide-react'
 import { useApp, buzz } from '@/lib/store'
 import { makeT, num, type TKey } from '@/lib/i18n'
 import { listArtworks, updateArtwork, deleteArtwork, artworkImageUrl, type ArtworkDto } from '@/lib/artworks'
-import { initAudio, sfx, playVoice } from '@/lib/sound'
+import { saveToGallery, shareNative } from '@/lib/native-save'
+import { useBackBlock } from '@/lib/back-button'
+import { initAudio, sfx } from '@/lib/sound'
+import { useToast } from '@/hooks/use-toast'
 import { Rango } from './Rango'
 import { StarBurst } from './Fx'
 import {
@@ -23,6 +26,7 @@ const iconBtn =
 export function GalleryPage() {
   const { lang, settings, go, openEdit } = useApp()
   const t = makeT(lang)
+  const { toast } = useToast()
   const [items, setItems] = useState<ArtworkDto[] | null>(null)
   const [urls, setUrls] = useState<Record<number, string>>({})
   const [viewItem, setViewItem] = useState<ArtworkDto | null>(null)
@@ -66,32 +70,74 @@ export function GalleryPage() {
     void load()
   }
 
+  // Android back button closes the open dialogs instead of leaving the gallery
+  useBackBlock(!!viewItem, () => {
+    sfx.close()
+    setViewItem(null)
+    return true
+  })
+  useBackBlock(!!renameItem, () => {
+    setRenameItem(null)
+    return true
+  })
+  useBackBlock(!!deleteItem, () => {
+    setDeleteItem(null)
+    return true
+  })
+
+  const blobOf = async (a: ArtworkDto): Promise<Blob | null> => {
+    const url = await artworkImageUrl(a.id)
+    if (!url) return null
+    try {
+      return await (await fetch(url)).blob()
+    } catch {
+      return null
+    }
+  }
+
   const download = async (a: ArtworkDto) => {
     sfx.tap()
-    const url = await artworkImageUrl(a.id)
-    if (!url) return
-    const aEl = document.createElement('a')
-    aEl.href = url
-    aEl.download = `${a.title || 'artwork'}.png`
-    aEl.click()
-    playVoice(lang, 'rGreat', settings.voice)
+    const blob = await blobOf(a)
+    if (!blob) return
+    const name = `${a.title || 'artwork'}.png`
+    try {
+      // APK: straight into the phone gallery — no download manager involved
+      const native = await saveToGallery(blob, name)
+      if (!native) {
+        // browser fallback: classic download
+        const url = URL.createObjectURL(blob)
+        const aEl = document.createElement('a')
+        aEl.href = url
+        aEl.download = name
+        aEl.click()
+        setTimeout(() => URL.revokeObjectURL(url), 4000)
+      }
+      toast({ title: t('savedToDevice') })
+    } catch {
+      sfx.error()
+      toast({ title: t('oops'), variant: 'destructive' })
+    }
   }
 
   const share = async (a: ArtworkDto) => {
     sfx.tap()
     if (!settings.sharing) {
       sfx.error()
+      toast({ title: t('sharedDisabled'), variant: 'destructive' })
       return
     }
     try {
-      const url = await artworkImageUrl(a.id)
-      if (!url) return
-      const blob = await (await fetch(url)).blob()
-      const file = new File([blob], `${a.title || 'artwork'}.png`, { type: 'image/png' })
+      const blob = await blobOf(a)
+      if (!blob) return
+      const name = `${a.title || 'artwork'}.png`
+      // APK: Android share sheet (save to Photos / send to family…)
+      if (await shareNative(blob, name, a.title)) return
+      // browser: Web Share with files, else classic download
+      const file = new File([blob], name, { type: 'image/png' })
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title: a.title })
       } else {
-        download(a)
+        await download(a)
       }
     } catch {
       /* user cancelled */
@@ -252,6 +298,25 @@ export function GalleryPage() {
                   className="mt-2 w-full rounded-2xl border-2 border-[#35445B]/5 bg-white"
                 />
                 <StarBurst count={10} />
+                {/* big, kid-friendly save & share buttons */}
+                <div className="mt-3 flex gap-2">
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => download(viewItem)}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#8DDEB0] px-3 py-3 text-sm font-black text-[#35445B] shadow-[0_3px_0_rgba(53,68,91,0.18)]"
+                  >
+                    <Download className="h-5 w-5" />
+                    {t('download')}
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => share(viewItem)}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#FFD65A] px-3 py-3 text-sm font-black text-[#35445B] shadow-[0_3px_0_rgba(53,68,91,0.18)]"
+                  >
+                    <Share2 className="h-5 w-5" />
+                    {t('share')}
+                  </motion.button>
+                </div>
               </div>
             </>
           )}

@@ -10,7 +10,7 @@ artworks are saved on-device in IndexedDB), so the Android APK needs **no server
 A ready, installable debug APK ships with this repository:
 
 ```
-download/color-world-kids.apk      (~7 MB, Android 7.0+)
+download/color-world-kids.apk      (~6 MB, Android 7.0+)
 ```
 
 Copy it to a phone and tap it (allow "install from unknown sources" when asked).
@@ -28,11 +28,18 @@ The script (in `apk-kit/build-apk.sh`) automatically:
 1. Builds the web app as a **static export** (`out/`),
 2. Copies it into `apk-kit/web/`,
 3. Installs Capacitor, creates/syncs the Android project,
-4. Regenerates the launcher icons from `public/icons/icon-512.png`,
-5. Runs `gradlew assembleDebug`,
-6. Copies the result to `download/color-world-kids.apk`.
+4. **Patches the native project** (`apk-kit/native/patch_android.py`):
+   registers the custom **GallerySaver** Capacitor plugin
+   (`apk-kit/native/GallerySaver.java`) that lets kids save their artwork
+   into the phone gallery (Pictures/Color World Kids) and share it through
+   the Android share sheet — the WebView alone supports neither `<a download>`
+   nor `navigator.share`,
+5. Regenerates the launcher icons from `public/icons/icon-512.png`,
+6. Runs `gradlew assembleDebug`,
+7. Copies the result to `download/color-world-kids.apk`.
 
-Environment: set `ANDROID_HOME` (and `JAVA_HOME` if javac is not on PATH).
+Environment: set `ANDROID_HOME` (and `JAVA_HOME` if javac is not on PATH —
+the script adds `$JAVA_HOME/bin` to PATH automatically).
 Without an Android SDK, install Android Studio first — nothing else is needed.
 
 ## روش ۲ — نصب مستقیم به‌عنوان اپ (PWA، بدون APK)

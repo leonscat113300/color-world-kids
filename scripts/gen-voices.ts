@@ -13,7 +13,6 @@ const LINES = {
     rGood: 'آفرین! عالی شد!',
     rWow: 'وای! چقدر قشنگ!',
     rAnother: 'یه رنگ دیگه!',
-    rGreat: 'کارت عالی بود!',
   },
   en: {
     rReady: "Let's paint!",
@@ -21,7 +20,6 @@ const LINES = {
     rGood: 'Great job!',
     rWow: "Wow! That's amazing!",
     rAnother: 'Another color!',
-    rGreat: "You're doing great!",
   },
 }
 

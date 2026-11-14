@@ -57,6 +57,7 @@ export function StudioIntro() {
               width={128}
               height={128}
               priority
+              unoptimized
               className="h-full w-full object-contain"
             />
           </motion.div>
@@ -163,6 +164,7 @@ export function Splash() {
             width={96}
             height={96}
             priority
+            unoptimized
             className="h-full w-full object-contain"
           />
         </motion.div>

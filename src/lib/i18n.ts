@@ -197,9 +197,12 @@ const fa = {
   rGood: 'آفرین! عالی شد!',
   rWow: 'وای! چقدر قشنگ!',
   rAnother: 'یه رنگ دیگه!',
-  rGreat: 'کارت عالی بود!',
   rPick: 'یه نقاشی انتخاب کن!',
   rStar: 'آفرین! یه ستاره گرفتی!',
+
+  // exit (Android back button on home)
+  exitTitle: 'بریم بیرون؟',
+  exitText: 'رنگو منتظرت می‌مونه! می‌خوای بازی رو ببندی؟',
 
   // common
   ok: 'باشه',
@@ -398,9 +401,11 @@ const en: Record<TKey, string> = {
   rGood: 'Great job!',
   rWow: "Wow! That's amazing!",
   rAnother: 'Another color!',
-  rGreat: "You're doing great!",
   rPick: 'Pick a drawing!',
   rStar: 'Yay! A new star!',
+
+  exitTitle: 'Leaving already?',
+  exitText: 'Rango will wait for you! Do you want to close the game?',
 
   ok: 'OK',
   close: 'Close',

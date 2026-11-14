@@ -16,6 +16,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog'
 import { listArtworks, deleteAllArtworks, type ArtworkDto } from '@/lib/artworks'
+import { useBackBlock } from '@/lib/back-button'
 import { cn } from '@/lib/utils'
 
 const rowCls =
@@ -81,6 +82,20 @@ export function SettingsPage() {
   const [showName, setShowName] = useState(false)
   const [nameValue, setNameValue] = useState(kidName)
   const [copied, setCopied] = useState(false)
+
+  // Android back button closes the open dialogs first
+  useBackBlock(showGuide, () => {
+    setShowGuide(false)
+    return true
+  })
+  useBackBlock(showAbout, () => {
+    setShowAbout(false)
+    return true
+  })
+  useBackBlock(showName, () => {
+    setShowName(false)
+    return true
+  })
 
   const copyEmail = async () => {
     try {
@@ -420,6 +435,13 @@ export function ParentsPage() {
   const [stats, setStats] = useState<{ count: number; stars: number } | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmText, setConfirmText] = useState(false)
+
+  // Android back button closes the delete-all confirmation first
+  useBackBlock(confirmDelete, () => {
+    setConfirmDelete(false)
+    setConfirmText(false)
+    return true
+  })
 
   useEffect(() => {
     listArtworks()

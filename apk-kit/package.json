@@ -2,5 +2,10 @@
   "name": "color-world-kids-apk-kit",
   "private": true,
   "version": "1.0.0",
-  "description": "Capacitor kit that turns the Color World Kids web app into an offline Android APK"
+  "description": "Capacitor kit that turns the Color World Kids web app into an offline Android APK",
+  "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/cli": "^8.6.2",
+    "@capacitor/core": "^8.6.2"
+  }
 }

@@ -1,1 +1,9 @@
-Here are all the generated files.
+# خروجی‌های آماده (Deliverables)
+
+| فایل | توضیح |
+|---|---|
+| `color-world-kids.apk` | نسخه‌ی آماده‌ی نصب اندروید (کاملاً آفلاین، اندروید ۷ به بالا) — با لوگوی جدید، ذخیره‌ی نقاشی در گالری گوشی، اشتراک‌گذاری بومی و دکمه‌ی برگشت هوشمند |
+| `README.md` | همین فایل |
+
+دانلود مستقیم از سرور: `GET /api/download?file=apk`
+راهنمای ساخت مجدد: [`../HOW-TO-BUILD-APK.md`](../HOW-TO-BUILD-APK.md)

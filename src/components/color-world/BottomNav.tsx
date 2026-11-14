@@ -30,10 +30,12 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-2xl px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)]"
+      className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-2xl"
       aria-label={t('navHome')}
     >
-      <div className="flex items-stretch justify-between gap-1 rounded-t-[1.6rem] border-x-[3px] border-t-[3px] border-[#35445B]/15 bg-white/95 px-2 pt-2 shadow-[0_-6px_24px_rgba(53,68,91,0.12)] backdrop-blur">
+      {/* white bar hugs the very bottom of the screen — safe-area padding sits
+          inside the white background so there is never a gap below it */}
+      <div className="flex items-stretch justify-between gap-1 rounded-t-[1.6rem] border-x-[3px] border-t-[3px] border-[#35445B]/15 bg-white/95 px-2 pt-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] shadow-[0_-6px_24px_rgba(53,68,91,0.12)] backdrop-blur">
         {ITEMS.map((it) => {
           const active = screen === it.screen
           const Icon = it.icon

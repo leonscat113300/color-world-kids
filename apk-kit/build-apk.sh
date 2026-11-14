@@ -33,6 +33,11 @@ PM="$(find_pkg_manager)"
 [ -z "$PM" ] && { echo "ERROR: need Node.js (npm) or Bun to build the web app"; exit 1; }
 echo "    pkg manager  : $PM"
 
+# use the JDK's bin dir when javac isn't on PATH already
+if [ -n "${JAVA_HOME:-}" ] && [ -x "$JAVA_HOME/bin/javac" ]; then
+  export PATH="$JAVA_HOME/bin:$PATH"
+fi
+
 if command -v javac >/dev/null 2>&1; then
   echo "    javac        : $(javac -version 2>&1)"
 else
@@ -94,6 +99,10 @@ if [ ! -d "$KIT_DIR/android" ]; then
   (cd "$KIT_DIR" && npx cap add android)
 fi
 (cd "$KIT_DIR" && npx cap sync android)
+
+# native bits: GallerySaver plugin (save/share artwork on the phone) + FileProvider
+echo "==> [4b/6] Patching the Android project (GallerySaver plugin + FileProvider)"
+python3 "$KIT_DIR/native/patch_android.py" "$KIT_DIR/android"
 
 # launcher icons from the app icon (best effort)
 if command -v python3 >/dev/null 2>&1 && python3 -c "import PIL" 2>/dev/null; then
