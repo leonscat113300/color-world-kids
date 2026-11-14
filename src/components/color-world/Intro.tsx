@@ -160,7 +160,7 @@ export function Splash() {
         >
           <Image
             src="/logo.webp"
-            alt="Candy Team Game Studio"
+            alt={t('appName')}
             width={96}
             height={96}
             priority

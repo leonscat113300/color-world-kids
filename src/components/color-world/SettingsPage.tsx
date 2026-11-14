@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 import {
   Music, Volume2, Mic2, Vibrate, Sparkles, BookOpen, Info, ShieldCheck,
-  Languages, ArrowRight, Trash2, Share2, Lock, Timer, UserRound, Pencil,
+  Languages, ArrowRight, Trash2, Share2, Lock, UserRound, Pencil,
   Mail, Copy, Check, X,
 } from 'lucide-react'
 import { useApp, buzz } from '@/lib/store'
@@ -538,20 +538,6 @@ export function ParentsPage() {
             {confirmDelete && <span className="animate-pulse text-xs">{t('confirm')}?</span>}
           </button>
         </div>
-
-        {/* privacy */}
-        <h2 className="mt-6 flex items-center gap-2 text-sm font-black text-white/80">
-          <ShieldCheck className="h-4 w-4" />
-          {t('privacyTitle')}
-        </h2>
-        <ul className="mt-2 space-y-2 pb-6 text-xs font-bold text-white/70">
-          {(['noAds', 'noAccount', 'localOnly', 'noChat'] as TKey[]).map((k) => (
-            <li key={k} className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2.5">
-              <Timer className="h-3.5 w-3.5 shrink-0 text-[#8DDEB0]" />
-              {t(k)}
-            </li>
-          ))}
-        </ul>
       </div>
 
       {/* delete all confirm */}

@@ -75,6 +75,15 @@ export function syncHistory(s: Screen): void {
   }
 }
 
+// ------------------------------------------------------------ localized APKs
+// NEXT_PUBLIC_DEFAULT_LANG is baked in at build time for the localized APKs:
+//   fa → Persian APK (مخصوص ایران)   en → English APK (international)
+// unset (hosted web) → keep the language chooser flow as before.
+const DEFAULT_LANG: Lang | null =
+  process.env.NEXT_PUBLIC_DEFAULT_LANG === 'fa' || process.env.NEXT_PUBLIC_DEFAULT_LANG === 'en'
+    ? (process.env.NEXT_PUBLIC_DEFAULT_LANG as Lang)
+    : null
+
 interface AppState {
   screen: Screen
   lang: Lang
@@ -101,8 +110,10 @@ export const useApp = create<AppState>()(
   persist(
     (set) => ({
       screen: 'studio',
-      lang: 'fa',
-      langChosen: false,
+      lang: DEFAULT_LANG ?? 'fa',
+      // localized APKs skip the language chooser (the APK is already in the
+      // right language); the hosted web build still asks.
+      langChosen: DEFAULT_LANG !== null,
       nameChosen: false,
       kidName: '',
       starTotal: null,

@@ -12,7 +12,9 @@
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
     "build:web-apk": "bash scripts/build-web-apk.sh",
-    "build:apk": "bash scripts/build-apk.sh"
+    "build:apk": "bash scripts/build-apk.sh fa",
+    "build:apk:fa": "bash scripts/build-apk.sh fa",
+    "build:apk:en": "bash scripts/build-apk.sh en"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.2",

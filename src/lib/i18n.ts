@@ -184,11 +184,6 @@ const fa = {
   deleteAllConfirmTitle: 'همه‌ی نقاشی‌ها پاک بشن؟',
   deleteAllConfirmText: 'همه‌ی آثار برای همیشه حذف میشن!',
   sharingAllowed: 'اجازه‌ی اشتراک‌گذاری نقاشی‌ها',
-  privacyTitle: 'امنیت کودک',
-  noAds: 'بدون تبلیغات مزاحم',
-  noAccount: 'بدون نیاز به ساخت حساب کاربری',
-  localOnly: 'آثار فقط روی همین دستگاه ذخیره میشن',
-  noChat: 'بدون چت و ارتباط با غریبه‌ها',
   backToSettings: 'برگرد به تنظیمات',
 
   // rango dialogues (short & punchy, colloquial spoken Persian)
@@ -387,11 +382,6 @@ const en: Record<TKey, string> = {
   deleteAllConfirmTitle: 'Delete all artworks?',
   deleteAllConfirmText: 'All artworks will be removed forever!',
   sharingAllowed: 'Allow sharing artworks',
-  privacyTitle: 'Child Safety',
-  noAds: 'No annoying ads',
-  noAccount: 'No account needed',
-  localOnly: 'Artworks stay on this device only',
-  noChat: 'No chat or contact with strangers',
   backToSettings: 'Back to Settings',
 
   rReady: "Let's paint!",
