@@ -44,6 +44,9 @@
 }
 
 :root {
+  /* Self-hosted fonts (no build-time Google Fonts fetch needed) */
+  --font-vazir: "Vazirmatn Variable";
+  --font-baloo: "Baloo 2 Variable";
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

@@ -1,23 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Vazirmatn, Baloo_2 } from "next/font/google";
 import "./globals.css";
+import "@fontsource-variable/vazirmatn/wght.css";
+import "@fontsource-variable/baloo-2/wght.css";
 import { Toaster } from "@/components/ui/toaster";
-
-// Persian: readable, beautiful rounded body font
-const vazir = Vazirmatn({
-  variable: "--font-vazir",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500", "700", "800", "900"],
-  display: "swap",
-});
-
-// English: playful rounded display font for kids
-const baloo = Baloo_2({
-  variable: "--font-baloo",
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "دنیای رنگ‌ها | Color World Kids",
@@ -57,7 +42,7 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <body
-        className={`${vazir.variable} ${baloo.variable} kid-font antialiased bg-background text-foreground`}
+        className={`kid-font antialiased bg-background text-foreground`}
       >
         {children}
         <Toaster />
