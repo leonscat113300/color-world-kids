@@ -1,70 +1,67 @@
 # ساخت فایل APK از «دنیای رنگ‌ها» / Build the APK
 
-The app is a **fully offline** kids' coloring book (drawings are generated in the browser,
-artworks are saved on-device in IndexedDB), so the Android APK needs **no server at all**.
+The web app is a standard Next.js project, so you have two ways to get it on Android phones.
 
 ---
 
-## روش ۰ — فایل آماده (Prebuilt APK)
+## روش ۱ — نصب مستقیم بدون نیاز به ساخت APK (سریع‌ترین راه) — PWA
 
-A ready, installable debug APK ships with this repository:
-
-```
-download/color-world-kids.apk      (~6 MB, Android 7.0+)
-```
-
-Copy it to a phone and tap it (allow "install from unknown sources" when asked).
-App id: `com.candyteam.colorworld` — launcher name: «دنیای رنگ‌ها».
-
-## روش ۱ — ساخت مجدد با یک دستور (One-command rebuild)
-
-On any machine with Node.js/Bun + JDK 17+ + Android SDK (Android Studio counts):
-
-```bash
-bash apk-kit/build-apk.sh
-```
-
-The script (in `apk-kit/build-apk.sh`) automatically:
-1. Builds the web app as a **static export** (`out/`),
-2. Copies it into `apk-kit/web/`,
-3. Installs Capacitor, creates/syncs the Android project,
-4. **Patches the native project** (`apk-kit/native/patch_android.py`):
-   registers the custom **GallerySaver** Capacitor plugin
-   (`apk-kit/native/GallerySaver.java`) that lets kids save their artwork
-   into the phone gallery (Pictures/Color World Kids) and share it through
-   the Android share sheet — the WebView alone supports neither `<a download>`
-   nor `navigator.share`,
-5. Regenerates the launcher icons from `public/icons/icon-512.png`,
-6. Runs `gradlew assembleDebug`,
-7. Copies the result to `download/color-world-kids.apk`.
-
-Environment: set `ANDROID_HOME` (and `JAVA_HOME` if javac is not on PATH —
-the script adds `$JAVA_HOME/bin` to PATH automatically).
-Without an Android SDK, install Android Studio first — nothing else is needed.
-
-## روش ۲ — نصب مستقیم به‌عنوان اپ (PWA، بدون APK)
-
-The web app ships with a full PWA manifest (`public/manifest.json`) and icons.
+The app ships with a full PWA manifest (`public/manifest.json`) and icons.
 
 1. Open the app URL in **Chrome (Android)**.
 2. Tap **⋮ → Add to Home screen / Install app**.
 3. The app installs with its own icon, full-screen (standalone), exactly like an APK app — no store needed.
 
-## روش ۳ — ساخت دستی با Capacitor (Android Studio)
+## روش ۲ — ساخت فایل APK واقعی با Capacitor (نیازمند Android Studio)
+
+### پیش‌نیازها (Requirements)
+- Node.js 18+
+- Android Studio (this installs the Android SDK automatically)
+- A hosted URL of this app (any hosting: Vercel, your own server, etc.)
+
+### مراحل (Steps)
 
 ```bash
-# 1. inside the project
+# 1. inside the unzipped project
 npm install
-cd apk-kit
-npm install @capacitor/core @capacitor/cli @capacitor/android
-npx cap add android        # uses apk-kit/capacitor.config.json
-npx cap open android       # opens Android Studio
+
+# 2. add Capacitor + the plugins the game needs:
+#    @capacitor/app         → Android back button navigates inside the game
+#                             (double-press on the home screen exits)
+#    @capacitor/filesystem  → «نقاشی‌های من» really saves the PNG on the phone
+#    @capacitor/share       → native share sheet for the artworks
+npm install @capacitor/core @capacitor/cli @capacitor/android \
+  @capacitor/app @capacitor/filesystem @capacitor/share
+
+# 3. create capacitor.config.json
+#    replace https://YOUR-APP-URL with the address where this app is hosted
+{
+  "appId": "com.candyteam.colorworld",
+  "appName": "Color World Kids",
+  "webDir": "public",
+  "server": { "url": "https://YOUR-APP-URL", "cleartext": false }
+}
+
+# 4. add the Android platform and open Android Studio
+npx cap add android
+npx cap sync android
+npx cap open android
 ```
 
-Then: **Build → Build Bundle(s)/APK(s) → Build APK(s)** →
-`apk-kit/android/app/build/outputs/apk/debug/app-debug.apk`.
+5. In Android Studio: **Build → Build Bundle(s)/APK(s) → Build APK(s)**.
+6. Your APK is generated at:
+   `android/app/build/outputs/apk/debug/app-debug.apk`
+7. For a release/signed APK use **Build → Generate Signed Bundle / APK** and follow the wizard (keystore + signing).
 
-For a release/signed APK use **Build → Generate Signed Bundle / APK** and follow the wizard.
+> نکته: هر بار که نسخه‌ی وب بازی به‌روز شد، فقط `npx cap sync android` را دوباره اجرا کنید تا پلاگین‌ها و تنظیمات تازه شوند.
+
+### آیکون اپ (App icon)
+Android Studio: right-click `res` → **New → Image Asset** → use `public/icons/icon-512.png` as the source image.
+
+### دکمه‌ی برگشت گوشی و ذخیره‌ی نقاشی‌ها (Back button & saving)
+با نصب سه پلاگین بالا، داخل بازی:
+- دکمه‌ی برگشت گوشی بین صفحه‌ها حرکت می‌کند و بازی ناگهانی بسته نمی‌شود؛ روی صفحه‌ی خانه دو بار پشت‌سرهم بزنید تا بازی خارج شود.
+- در «نقاشی‌های من» دکمه‌ی ذخیره، فایل PNG را واقعاً روی گوشی (پوشه‌ی Documents/Downloads) ذخیره می‌کند و دکمه‌ی اشتراک‌گذاری، شیت اشتراک‌گذاری خود اندروید را باز می‌کند.
 
 ---
 
@@ -72,10 +69,6 @@ For a release/signed APK use **Build → Generate Signed Bundle / APK** and foll
 
 | فایل | مسیر |
 |---|---|
-| APK آماده نصب | `download/color-world-kids.apk` + `GET /api/download?file=apk` |
-| سورس کامل پروژه (ZIP) | `GET /api/download` |
+| سورس کامل پروژه | `GET /api/download` (ZIP file) |
 | کاتالوگ JSON همه‌ی ۲۰ دسته و ۲۰۰۰ نقاشی | `GET /api/catalog` |
-| API ذخیره/لیست نقاشی‌ها (برای سرویس‌های بیرونی) | `GET/POST /api/artworks` |
-
-> نکته: خودِ اپ نقاشی‌ها را روی همان دستگاه (IndexedDB) ذخیره می‌کند و کاملاً آفلاین کار می‌کند؛
-> APIها برای اتصال سرویس‌های بیرونی و بکاپ گرفتن در نسخه‌ی وب در دسترس‌اند.
+| API ذخیره/لیست نقاشی‌ها | `GET/POST /api/artworks` |

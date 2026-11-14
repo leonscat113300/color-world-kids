@@ -10,7 +10,7 @@ import { makeT, num, tf } from '@/lib/i18n'
 import { initAudio, sfx, playVoice } from '@/lib/sound'
 import { Rango } from './Rango'
 import { StarBurst } from './Fx'
-import { listArtworks, type ArtworkDto } from '@/lib/artworks'
+import type { ArtworkDto } from './GalleryPage'
 
 interface BadgeDef {
   key: 'badge1' | 'badge2' | 'badge3' | 'badge4' | 'badge5' | 'badge6' | 'badge7' | 'badge8'
@@ -40,7 +40,8 @@ export function RewardsPage() {
   const [items, setItems] = useState<ArtworkDto[] | null>(null)
 
   useEffect(() => {
-    listArtworks()
+    fetch('/api/artworks')
+      .then((r) => r.json())
       .then((data: ArtworkDto[]) => {
         setItems(data)
         const total = data.reduce((s, a) => s + a.stars, 0)

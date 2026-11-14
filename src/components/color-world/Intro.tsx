@@ -52,7 +52,7 @@ export function StudioIntro() {
             transition={{ delay: 1.2, duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
           >
             <Image
-              src="/logo.webp"
+              src="/logo.webp?v=2"
               alt="Candy Team Game Studio"
               width={128}
               height={128}
@@ -159,7 +159,7 @@ export function Splash() {
           transition={{ delay: 0.15, type: 'spring', stiffness: 220, damping: 13 }}
         >
           <Image
-            src="/logo.webp"
+            src="/logo.webp?v=2"
             alt="Candy Team Game Studio"
             width={96}
             height={96}

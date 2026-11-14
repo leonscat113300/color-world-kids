@@ -15,8 +15,7 @@ import { Slider } from '@/components/ui/slider'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog'
-import { listArtworks, deleteAllArtworks, type ArtworkDto } from '@/lib/artworks'
-import { useBackBlock } from '@/lib/back-button'
+import type { ArtworkDto } from './GalleryPage'
 import { cn } from '@/lib/utils'
 
 const rowCls =
@@ -82,20 +81,6 @@ export function SettingsPage() {
   const [showName, setShowName] = useState(false)
   const [nameValue, setNameValue] = useState(kidName)
   const [copied, setCopied] = useState(false)
-
-  // Android back button closes the open dialogs first
-  useBackBlock(showGuide, () => {
-    setShowGuide(false)
-    return true
-  })
-  useBackBlock(showAbout, () => {
-    setShowAbout(false)
-    return true
-  })
-  useBackBlock(showName, () => {
-    setShowName(false)
-    return true
-  })
 
   const copyEmail = async () => {
     try {
@@ -436,15 +421,9 @@ export function ParentsPage() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmText, setConfirmText] = useState(false)
 
-  // Android back button closes the delete-all confirmation first
-  useBackBlock(confirmDelete, () => {
-    setConfirmDelete(false)
-    setConfirmText(false)
-    return true
-  })
-
   useEffect(() => {
-    listArtworks()
+    fetch('/api/artworks')
+      .then((r) => r.json())
       .then((items: ArtworkDto[]) =>
         setStats({ count: items.length, stars: items.reduce((s, a) => s + a.stars, 0) })
       )
@@ -459,7 +438,7 @@ export function ParentsPage() {
     }
     setConfirmText(false)
     setConfirmDelete(false)
-    await deleteAllArtworks()
+    await fetch('/api/artworks?all=1', { method: 'DELETE' })
     sfx.pop()
     setStats({ count: 0, stars: 0 })
   }

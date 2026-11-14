@@ -1,8 +1,0 @@
-{
-  "appId": "com.candyteam.colorworld",
-  "appName": "دنیای رنگ‌ها",
-  "webDir": "web",
-  "android": {
-    "allowMixedContent": false
-  }
-}

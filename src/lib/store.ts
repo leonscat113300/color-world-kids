@@ -37,6 +37,44 @@ export interface EditRef {
   state: string
 }
 
+// ------------------------------------------------------------ back navigation
+// The app is a single page without URL routes, so the phone's hardware back
+// button (and the browser back button) would normally leave the app at once.
+// We keep a tiny 2-entry history stack — [app-start entry, current entry] —
+// and walk the semantic screen tree instead:
+//   • every screen change just replaces the top entry (stack never grows)
+//   • on popstate (back pressed) we re-push the semantic parent screen
+//   • Capacitor APK builds additionally register a native backButton listener
+const ONBOARDING_SCREENS: Screen[] = ['studio', 'splash', 'language', 'name']
+
+export const isOnboardingScreen = (s: Screen): boolean => ONBOARDING_SCREENS.includes(s)
+
+const BACK_MAP: Partial<Record<Screen, Screen>> = {
+  categories: 'home',
+  picker: 'categories',
+  gallery: 'home',
+  rewards: 'home',
+  settings: 'home',
+  parents: 'settings',
+}
+
+/** Semantic parent of a screen — what the hardware back button should show. */
+export function backTargetOf(screen: Screen, editing: EditRef | null): Screen | null {
+  if (screen === 'coloring') return editing ? 'gallery' : 'picker'
+  return BACK_MAP[screen] ?? null
+}
+
+/** Point the top history entry at the given screen (never grows the stack). */
+export function syncHistory(s: Screen): void {
+  if (typeof window === 'undefined') return
+  try {
+    if (window.history.state?.screen === s) return
+    window.history.replaceState({ screen: s }, '')
+  } catch {
+    /* history API unavailable — ignore */
+  }
+}
+
 interface AppState {
   screen: Screen
   lang: Lang
@@ -80,7 +118,10 @@ export const useApp = create<AppState>()(
       pickerCategory: 'animals',
       currentTemplateId: null,
       editing: null,
-      go: (s) => set({ screen: s }),
+      go: (s) => {
+        set({ screen: s })
+        syncHistory(s)
+      },
       setLang: (l) => set({ lang: l, langChosen: true }),
       setKidName: (n) => set({ kidName: n.trim().slice(0, 20), nameChosen: true }),
       setStarTotal: (n) => set({ starTotal: n }),
@@ -91,10 +132,18 @@ export const useApp = create<AppState>()(
           setSfxEnabled(next.sfx, next.sfxVolume)
           return { settings: next }
         }),
-      openPicker: (cat) => set({ pickerCategory: cat, screen: 'picker' }),
-      openTemplate: (id) => set({ currentTemplateId: id, editing: null, screen: 'coloring' }),
-      openEdit: (ref) =>
-        set({ currentTemplateId: ref.templateId || 'free-draw', editing: ref, screen: 'coloring' }),
+      openPicker: (cat) => {
+        set({ pickerCategory: cat, screen: 'picker' })
+        syncHistory('picker')
+      },
+      openTemplate: (id) => {
+        set({ currentTemplateId: id, editing: null, screen: 'coloring' })
+        syncHistory('coloring')
+      },
+      openEdit: (ref) => {
+        set({ currentTemplateId: ref.templateId || 'free-draw', editing: ref, screen: 'coloring' })
+        syncHistory('coloring')
+      },
       clearEdit: () => set({ editing: null }),
     }),
     {

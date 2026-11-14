@@ -200,10 +200,6 @@ const fa = {
   rPick: 'یه نقاشی انتخاب کن!',
   rStar: 'آفرین! یه ستاره گرفتی!',
 
-  // exit (Android back button on home)
-  exitTitle: 'بریم بیرون؟',
-  exitText: 'رنگو منتظرت می‌مونه! می‌خوای بازی رو ببندی؟',
-
   // common
   ok: 'باشه',
   close: 'بستن',
@@ -215,6 +211,8 @@ const fa = {
   oops: 'اوه اوه!',
   tryAgain: 'دوباره امتحان کن',
   saved: 'ذخیره شد!',
+  saveFailed: 'نشد ذخیره کنه! دوباره امتحان کن',
+  exitHint: 'برای خروج، دوباره دکمه‌ی برگشت رو بزن!',
 }
 
 export type TKey = keyof typeof fa
@@ -404,9 +402,6 @@ const en: Record<TKey, string> = {
   rPick: 'Pick a drawing!',
   rStar: 'Yay! A new star!',
 
-  exitTitle: 'Leaving already?',
-  exitText: 'Rango will wait for you! Do you want to close the game?',
-
   ok: 'OK',
   close: 'Close',
   cancel: 'Cancel',
@@ -417,6 +412,8 @@ const en: Record<TKey, string> = {
   oops: 'Oops!',
   tryAgain: 'Try Again',
   saved: 'Saved!',
+  saveFailed: "Couldn't save it! Try again",
+  exitHint: 'Press the back button again to exit!',
 }
 
 export const dict: Record<Lang, Record<TKey, string>> = { fa, en }

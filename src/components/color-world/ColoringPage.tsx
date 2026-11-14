@@ -13,8 +13,6 @@ import { templateById, dailyTemplate } from '@/lib/templates'
 import { MAIN_COLORS, PALETTES, paletteTitle } from '@/lib/palettes'
 import { STICKERS, stickerById, stickerDataUrl } from '@/lib/stickers'
 import { initAudio, sfx, playVoice } from '@/lib/sound'
-import { createArtwork, updateArtwork } from '@/lib/artworks'
-import { useBackBlock } from '@/lib/back-button'
 import { Rango, SpeechBubble } from './Rango'
 import { StarBurst } from './Fx'
 import { cn } from '@/lib/utils'
@@ -88,33 +86,6 @@ export function ColoringPage() {
   const [selectedSticker, setSelectedSticker] = useState<string | null>(null)
   const [pendingSticker, setPendingSticker] = useState<string | null>(null)
   const [rangoLine, setRangoLine] = useState<TKey | null>(null)
-
-  // Android back button: close the top-most overlay first (save dialog, sheets,
-  // help, clear confirm, selected sticker) — only then navigate away.
-  useBackBlock(true, () => {
-    if (saveStep !== null) {
-      if (saveStep === 'saving') return true // never interrupt a save in flight
-      setSaveStep(null)
-      return true
-    }
-    if (sheet !== null) {
-      setSheet(null)
-      return true
-    }
-    if (showHelp) {
-      setShowHelp(false)
-      return true
-    }
-    if (showClear) {
-      setShowClear(false)
-      return true
-    }
-    if (selectedSticker) {
-      setSelectedSticker(null)
-      return true
-    }
-    return false
-  })
 
   const svgFillRef = useRef<HTMLDivElement>(null)
   const svgLineRef = useRef<HTMLDivElement>(null)
@@ -559,16 +530,19 @@ export function ColoringPage() {
         state,
         stars,
       }
-      if (editing) await updateArtwork(editing.id, body)
-      else await createArtwork(body)
+      const res = await fetch(editing ? `/api/artworks/${editing.id}` : '/api/artworks', {
+        method: editing ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) throw new Error('save failed')
       setEarned(stars)
       setSaveStep('done')
       sfx.achievement()
       const st = useApp.getState()
       st.setStarTotal((st.starTotal ?? 0) + stars)
       clearEdit()
-    } catch (err) {
-      console.error('SAVE-FAIL', err)
+    } catch {
       setSaveStep(null)
       sfx.error()
     }
