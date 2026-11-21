@@ -1,0 +1,35 @@
+{
+  "name": "دنیای رنگ‌ها | Color World Kids",
+  "short_name": "رنگ‌ها",
+  "description": "بازی رنگ‌آمیزی شاد و امن برای کودکان ۳ تا ۱۲ سال — با رنگو آشنا شو، نقاشی بکش، استیکر بچسبون و گالری خودت رو بساز!",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFFFFF",
+  "theme_color": "#78C8F8",
+  "lang": "fa",
+  "dir": "rtl",
+  "categories": ["kids", "games", "education"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png?v=2",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png?v=2",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png?v=2",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
